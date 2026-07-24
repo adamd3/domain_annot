@@ -120,7 +120,3 @@ resolved = resolve_domains(hits, entry_list, genes=gb_result.genes)
 # Export to TSV
 write_tsv(resolved, "results/domains.tsv")
 ```
-
-```
-
-```
