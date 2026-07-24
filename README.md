@@ -9,7 +9,6 @@
 - **GenBank & NCBI Integration**: Download reference genome annotations directly via NCBI Accession/TaxID and extract both protein FASTA (with stop codons stripped) and genomic coordinates.
 - **InterPro Boundary Resolution**: Group raw InterProScan hits, collapse redundant boundaries, and upgrade domain specificity based on official EBI entry type priorities (`Family` > `Domain` > `Homologous_superfamily`).
 - **Overlap Reduction**: Automatically filter out redundant domain predictions exceeding a 50% overlap threshold.
-- **Strand-Aware Coordinate Mapping**: Accurately translate amino acid positions into 1-based genomic nucleotide coordinates for both `+` and `-` strand genes.
 - **Multi-Format Exports**: Output results as clean TSV, 6-column BED, or standard GFF3 files for genome browsers.
 
 ---
@@ -17,6 +16,7 @@
 ## Installation
 
 ### From Source
+
 ```bash
 git clone https://github.com/your-username/domain_annot.git
 cd domain_annot
@@ -47,17 +47,18 @@ pip install -e .
 
 ---
 
-
 ### Workflow Option A: Starting with an NCBI Accession (GenBank)
 
 1. **Fetch GenBank & InterPro Data (`fetch`)**
    Download a complete GenBank record, extract protein sequence FASTA (`.fasta`), and download the EBI InterPro entry list:
+
    ```bash
    domain-annot fetch -a NC_010397.1 -o data/
    ```
 
 2. **Run InterProScan**
    Run InterProScan on `data/NC_010397.1_proteins.nostop.fasta` to produce `interpro_results.tsv`:
+
    ```bash
    interproscan.sh -i data/NC_010397.1_proteins.nostop.fasta -f TSV -iprlookup -goterms -o interpro_results.tsv
    ```
@@ -80,6 +81,7 @@ If you already have your own protein FASTA file (`my_proteins.fasta`) and genomi
 
 1. **Run InterProScan**
    Run InterProScan on your protein FASTA file:
+
    ```bash
    interproscan.sh -i my_proteins.fasta -f TSV -iprlookup -goterms -o interpro_results.tsv
    ```
@@ -93,7 +95,6 @@ If you already have your own protein FASTA file (`my_proteins.fasta`) and genomi
      -o results/ \
      --prefix my_genome_domains
    ```
-
 
 ---
 
@@ -120,17 +121,6 @@ resolved = resolve_domains(hits, entry_list, genes=gb_result.genes)
 write_tsv(resolved, "results/domains.tsv")
 ```
 
----
-
-## Testing
-
-Run the `pytest` test suite:
-```bash
-pytest -v
 ```
 
----
-
-## License
-
-MIT License
+```
