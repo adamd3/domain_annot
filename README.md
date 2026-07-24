@@ -31,31 +31,54 @@ pip install -e .
 
 ---
 
-## Quickstart & Usage
+## Quickstart & Workflows
 
-### 1. Download GenBank & InterPro Data (`fetch`)
-Download a complete GenBank record and extract the protein sequence FASTA along with the EBI InterPro entry list:
-```bash
-domain-annot fetch -a NC_010397.1 -o data/
-```
+### Workflow Option A: Starting with an NCBI Accession (GenBank)
 
-### 2. Process InterProScan Results (`process`)
-Process InterProScan results (`.tsv`) and map resolved domains onto genomic coordinates using a GenBank record:
-```bash
-domain-annot process \
-  -i path/to/interproscan_results.tsv \
-  -g data/NC_010397.1.gbk \
-  -o results/ \
-  --prefix my_genome_domains
-```
+1. **Fetch GenBank & InterPro Data (`fetch`)**
+   Download a complete GenBank record, extract protein sequence FASTA (`.fasta`), and download the EBI InterPro entry list:
+   ```bash
+   domain-annot fetch -a NC_010397.1 -o data/
+   ```
 
-Or process using a separate GFF3 annotation file:
-```bash
-domain-annot process \
-  -i path/to/interproscan_results.tsv \
-  --gff path/to/annotations.gff3 \
-  -o results/
-```
+2. **Run InterProScan**
+   Run InterProScan on `data/NC_010397.1_proteins.nostop.fasta` to produce `interpro_results.tsv`:
+   ```bash
+   interproscan.sh -i data/NC_010397.1_proteins.nostop.fasta -f TSV -iprlookup -goterms -o interpro_results.tsv
+   ```
+
+3. **Process Domain Predictions (`process`)**
+   Process `interpro_results.tsv` and map resolved domains onto genomic coordinates using the `.gbk` record:
+   ```bash
+   domain-annot process \
+     -i interpro_results.tsv \
+     -g data/NC_010397.1.gbk \
+     -o results/ \
+     --prefix my_genome_domains
+   ```
+
+---
+
+### Workflow Option B: Starting with custom Protein FASTA + GFF3 files
+
+If you already have your own protein FASTA file (`my_proteins.fasta`) and genomic GFF3 annotation file (`my_genome.gff3`):
+
+1. **Run InterProScan**
+   Run InterProScan on your protein FASTA file:
+   ```bash
+   interproscan.sh -i my_proteins.fasta -f TSV -iprlookup -goterms -o interpro_results.tsv
+   ```
+
+2. **Process Domain Predictions (`process`)**
+   Process `interpro_results.tsv` and map resolved domains onto genomic coordinates using your GFF3 file:
+   ```bash
+   domain-annot process \
+     -i interpro_results.tsv \
+     --gff my_genome.gff3 \
+     -o results/ \
+     --prefix my_genome_domains
+   ```
+
 
 ---
 
