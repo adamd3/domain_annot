@@ -12,6 +12,7 @@ from Bio.SeqRecord import SeqRecord
 from domain_annot.gff import GeneFeature
 
 EBI_ENTRY_LIST_URL = "https://ftp.ebi.ac.uk/pub/databases/interpro/current_release/entry.list"
+EBI_PARENT_CHILD_URL = "https://ftp.ebi.ac.uk/pub/databases/interpro/current_release/ParentChildTreeFile.txt"
 
 
 @dataclass
@@ -122,6 +123,22 @@ def fetch_interpro_entry_list(out_path: Union[str, Path]) -> Path:
     out_path = Path(out_path)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     urllib.request.urlretrieve(EBI_ENTRY_LIST_URL, out_path)
+    return out_path
+
+
+def fetch_interpro_parent_child_tree(out_path: Union[str, Path]) -> Path:
+    """
+    Download ParentChildTreeFile.txt from EBI FTP server.
+
+    Args:
+        out_path: Output file path.
+
+    Returns:
+        Path to downloaded file.
+    """
+    out_path = Path(out_path)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    urllib.request.urlretrieve(EBI_PARENT_CHILD_URL, out_path)
     return out_path
 
 

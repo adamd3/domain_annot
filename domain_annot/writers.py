@@ -19,7 +19,8 @@ def write_tsv(domains: List[ResolvedDomain], out_path: Union[str, Path]) -> Path
     headers = [
         "protein_id", "aa_start", "aa_stop", "strand",
         "genome_start", "genome_end", "interpro_acc",
-        "interpro_desc", "entry_type", "go_terms"
+        "interpro_desc", "entry_type", "parent_acc",
+        "parent_name", "go_terms"
     ]
 
     with open(out_path, "w", newline="") as f:
@@ -37,6 +38,8 @@ def write_tsv(domains: List[ResolvedDomain], out_path: Union[str, Path]) -> Path
                 d.interpro_acc,
                 d.interpro_desc,
                 d.entry_type or "",
+                d.parent_acc or "",
+                d.parent_name or "",
                 d.go_terms or ""
             ])
 
@@ -98,6 +101,10 @@ def write_gff3(domains: List[ResolvedDomain], out_path: Union[str, Path]) -> Pat
             ]
             if d.entry_type:
                 attr_parts.append(f"entry_type={d.entry_type}")
+            if d.parent_acc:
+                attr_parts.append(f"parent_acc={d.parent_acc}")
+            if d.parent_name:
+                attr_parts.append(f"parent_name={d.parent_name}")
             if d.go_terms:
                 attr_parts.append(f"Ontology_term={d.go_terms}")
 

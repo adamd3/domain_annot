@@ -8,6 +8,7 @@ from domain_annot.coordinate_mapper import map_aa_to_genome_coords
 from domain_annot.gff import GeneFeature
 from domain_annot.interpro import (
     InterProEntryType,
+    InterProParentInfo,
     RawInterProHit,
     extract_go_mapping,
     get_type_priority,
@@ -28,6 +29,8 @@ class ResolvedDomain:
     genome_start: Optional[int] = None
     genome_end: Optional[int] = None
     chrom: Optional[str] = None
+    parent_acc: Optional[str] = None
+    parent_name: Optional[str] = None
 
 
 @dataclass
@@ -49,7 +52,8 @@ class _CandidateDomain:
 def resolve_domains(
     hits: List[RawInterProHit],
     entry_list: Dict[str, InterProEntryType],
-    genes: Optional[Dict[str, GeneFeature]] = None
+    genes: Optional[Dict[str, GeneFeature]] = None,
+    parent_map: Optional[Dict[str, InterProParentInfo]] = None
 ) -> List[ResolvedDomain]:
     """
     Resolve raw InterProScan hits into non-redundant domain annotations mapped to genomic coordinates.
@@ -192,6 +196,14 @@ def resolve_domains(
                         aa_stop=cand.stop
                     )
 
+                # Lookup parent domain info if parent_map provided
+                parent_acc: Optional[str] = None
+                parent_name: Optional[str] = None
+                if parent_map and cand.interpro_acc in parent_map:
+                    pinfo = parent_map[cand.interpro_acc]
+                    parent_acc = pinfo.parent_acc
+                    parent_name = pinfo.parent_name
+
                 final_domains.append(ResolvedDomain(
                     protein_id=protein_id,
                     aa_start=cand.start,
@@ -204,7 +216,9 @@ def resolve_domains(
                     strand=strand,
                     genome_start=genome_start,
                     genome_end=genome_end,
-                    chrom=chrom
+                    chrom=chrom,
+                    parent_acc=parent_acc,
+                    parent_name=parent_name
                 ))
 
     # Sort final domains by protein_id and aa_start

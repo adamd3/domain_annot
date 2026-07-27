@@ -49,3 +49,28 @@ def test_domain_resolution_tetr():
     assert d1.genome_start is not None
     assert d1.genome_end is not None
     assert d1.genome_start < d1.genome_end
+
+
+def test_parent_domain_resolution():
+    from domain_annot.interpro import InterProParentInfo, parse_parent_child_tree
+    import io
+
+    sample_tree = """IPR003593::AAA+ ATPase domain::
+--IPR020591::Chromosomal replication control, initiator DnaA-like::
+"""
+    parent_map = parse_parent_child_tree(io.StringIO(sample_tree))
+    assert "IPR020591" in parent_map
+    assert parent_map["IPR020591"].parent_acc == "IPR003593"
+    assert parent_map["IPR020591"].parent_name == "AAA+ ATPase domain"
+
+    entry_list = {
+        "IPR020591": InterProEntryType("IPR020591", "Family", "Chromosomal replication control, initiator DnaA-like")
+    }
+    hits = [
+        RawInterProHit("prot1", "md5", 500, "PRINTS", "PR00051", "DnaA", 212, 491, 1e-50, "T", "", "IPR020591", "Chromosomal replication control, initiator DnaA-like", None, None)
+    ]
+    resolved = resolve_domains(hits, entry_list, parent_map=parent_map)
+    assert len(resolved) == 1
+    assert resolved[0].parent_acc == "IPR003593"
+    assert resolved[0].parent_name == "AAA+ ATPase domain"
+

@@ -8,8 +8,18 @@ import click
 
 from domain_annot import __version__
 from domain_annot.gff import parse_gff
-from domain_annot.interpro import parse_interpro_entry_list, parse_interpro_tsv
-from domain_annot.ncbi import fetch_genbank_by_accession, fetch_interpro_entry_list, parse_genbank, export_fasta
+from domain_annot.interpro import (
+    parse_interpro_entry_list,
+    parse_interpro_tsv,
+    parse_parent_child_tree,
+)
+from domain_annot.ncbi import (
+    fetch_genbank_by_accession,
+    fetch_interpro_entry_list,
+    fetch_interpro_parent_child_tree,
+    parse_genbank,
+    export_fasta,
+)
 from domain_annot.domain_resolver import resolve_domains
 from domain_annot.writers import write_tsv, write_bed, write_gff3
 
@@ -45,18 +55,25 @@ def fetch_cmd(accession: str, outdir: str):
     fetch_interpro_entry_list(entry_file)
     click.echo(f"[+] InterPro entry list saved to: {entry_file}")
 
+    click.echo("[*] Downloading EBI InterPro parent-child tree...")
+    tree_file = out_path / "ParentChildTreeFile.txt"
+    fetch_interpro_parent_child_tree(tree_file)
+    click.echo(f"[+] InterPro parent-child tree saved to: {tree_file}")
+
     click.echo("[✓] Data fetching complete.")
 
 
 @main.command(name="process")
 @click.option("-i", "--interpro-tsv", required=True, type=click.Path(exists=True), help="Path to InterProScan TSV output")
 @click.option("-e", "--entry-list", type=click.Path(), help="Path to interpro_entry_list.txt (will fetch if not provided)")
+@click.option("-p", "--parent-tree", type=click.Path(), help="Path to ParentChildTreeFile.txt for domain hierarchy mapping")
 @click.option("-g", "--genbank", type=click.Path(exists=True), help="Path to GenBank file for genomic mapping")
 @click.option("--gff", type=click.Path(exists=True), help="Path to GFF3 file for genomic mapping (if GenBank not provided)")
 @click.option("-o", "--output", default="results/domains", show_default=True, help="Output path prefix for domain annotations (without extension)")
 def process_cmd(
     interpro_tsv: str,
     entry_list: Optional[str],
+    parent_tree: Optional[str],
     genbank: Optional[str],
     gff: Optional[str],
     output: str
@@ -70,11 +87,12 @@ def process_cmd(
     if out_prefix.parent:
         out_prefix.parent.mkdir(parents=True, exist_ok=True)
 
+    entry_dir = out_prefix.parent if str(out_prefix.parent) else Path(".")
+
     # 1. Handle InterPro Entry List
     if entry_list and Path(entry_list).exists():
         entry_file = Path(entry_list)
     else:
-        entry_dir = out_prefix.parent if str(out_prefix.parent) else Path(".")
         entry_file = entry_dir / "interpro_entry_list.txt"
         if not entry_file.exists():
             click.echo("[*] Downloading EBI InterPro entry list...")
@@ -83,12 +101,28 @@ def process_cmd(
     entries = parse_interpro_entry_list(entry_file)
     click.echo(f"[*] Loaded {len(entries)} InterPro entry classifications.")
 
-    # 2. Parse InterProScan TSV
+    # 2. Handle InterPro Parent-Child Tree
+    parent_map = None
+    if parent_tree and Path(parent_tree).exists():
+        tree_file = Path(parent_tree)
+    else:
+        tree_file = entry_dir / "ParentChildTreeFile.txt"
+        if not tree_file.exists():
+            # Check data/ directory as fallback
+            data_tree = Path("data/ParentChildTreeFile.txt")
+            if data_tree.exists():
+                tree_file = data_tree
+
+    if tree_file.exists():
+        parent_map = parse_parent_child_tree(tree_file)
+        click.echo(f"[*] Loaded {len(parent_map)} InterPro parent-child hierarchy relationships.")
+
+    # 3. Parse InterProScan TSV
     click.echo(f"[*] Parsing InterProScan results from: {interpro_tsv}")
     hits = parse_interpro_tsv(interpro_tsv)
     click.echo(f"[*] Loaded {len(hits)} raw InterProScan hits.")
 
-    # 3. Load Genomic Coordinate Mapping (from GenBank or GFF)
+    # 4. Load Genomic Coordinate Mapping (from GenBank or GFF)
     genes = None
     if genbank:
         click.echo(f"[*] Extracting genomic gene coordinates from GenBank: {genbank}")
@@ -100,12 +134,12 @@ def process_cmd(
         genes = parse_gff(gff)
         click.echo(f"[*] Loaded coordinates for {len(genes)} genes.")
 
-    # 4. Resolve Domain Boundaries & Specificity Upgrades
+    # 5. Resolve Domain Boundaries & Specificity Upgrades
     click.echo("[*] Resolving domain boundaries and specificity upgrades...")
-    resolved = resolve_domains(hits, entries, genes=genes)
+    resolved = resolve_domains(hits, entries, genes=genes, parent_map=parent_map)
     click.echo(f"[+] Resolved {len(resolved)} non-redundant domain annotations across proteins.")
 
-    # 5. Export Writers
+    # 6. Export Writers
     tsv_out = Path(f"{output}.tsv")
     write_tsv(resolved, tsv_out)
     click.echo(f"[+] Saved TSV domain annotations: {tsv_out}")

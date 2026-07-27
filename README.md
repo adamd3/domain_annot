@@ -8,8 +8,9 @@
 
 - **GenBank & NCBI Integration**: Download reference genome annotations directly via NCBI Accession/TaxID and extract both protein FASTA (with stop codons stripped) and genomic coordinates.
 - **InterPro Boundary Resolution**: Group raw InterProScan hits, collapse redundant boundaries, and upgrade domain specificity based on official EBI entry type priorities (`Family` > `Domain` > `Homologous_superfamily`).
+- **Parent Domain Hierarchy Mapping**: Automatically map each resolved `Family` entry back to its parent `Domain` or `Superfamily` using EBI's official `ParentChildTreeFile.txt`.
 - **Overlap Reduction**: Automatically filter out redundant domain predictions exceeding a 50% overlap threshold.
-- **Multi-Format Exports**: Output results as clean TSV, 6-column BED, or standard GFF3 files for genome browsers.
+- **Multi-Format Exports**: Output results as clean TSV (including `parent_acc` and `parent_name`), 6-column BED, or standard GFF3 files for genome browsers.
 
 ---
 

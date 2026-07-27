@@ -193,3 +193,57 @@ def extract_go_mapping(hits: List[RawInterProHit]) -> Dict[str, str]:
             acc_to_go[hit.interpro_acc].update(go_ids)
 
     return {acc: "|".join(sorted(list(go_set))) for acc, go_set in acc_to_go.items()}
+
+
+@dataclass
+class InterProParentInfo:
+    parent_acc: str
+    parent_name: str
+
+
+def parse_parent_child_tree(
+    file_path_or_handle: Union[str, Path, TextIO]
+) -> Dict[str, InterProParentInfo]:
+    """
+    Parse EBI ParentChildTreeFile.txt file.
+
+    Returns dict mapping child interpro_acc -> InterProParentInfo(parent_acc, parent_name).
+    """
+    parent_map: Dict[str, InterProParentInfo] = {}
+
+    if isinstance(file_path_or_handle, (str, Path)):
+        handle = open(file_path_or_handle, "r")
+        should_close = True
+    else:
+        handle = file_path_or_handle
+        should_close = False
+
+    try:
+        stack: Dict[int, InterProParentInfo] = {}
+        for line in handle:
+            line_str = line.strip()
+            if not line_str:
+                continue
+
+            lstripped = line_str.lstrip("-")
+            dash_count = len(line_str) - len(lstripped)
+            depth = dash_count // 2
+
+            parts = lstripped.split("::")
+            if not parts or not parts[0].startswith("IPR"):
+                continue
+
+            acc = parts[0].strip()
+            name = parts[1].strip() if len(parts) > 1 else ""
+
+            if depth > 0 and (depth - 1) in stack:
+                parent_info = stack[depth - 1]
+                parent_map[acc] = parent_info
+
+            stack[depth] = InterProParentInfo(parent_acc=acc, parent_name=name)
+
+    finally:
+        if should_close:
+            handle.close()
+
+    return parent_map
