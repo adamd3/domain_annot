@@ -21,3 +21,4 @@ htmlcov/
 *.R
 *.fasta
 *.sh
+AGENTS.md
