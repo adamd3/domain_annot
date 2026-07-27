@@ -53,25 +53,29 @@ def fetch_cmd(accession: str, outdir: str):
 @click.option("-e", "--entry-list", type=click.Path(), help="Path to interpro_entry_list.txt (will fetch if not provided)")
 @click.option("-g", "--genbank", type=click.Path(exists=True), help="Path to GenBank file for genomic mapping")
 @click.option("--gff", type=click.Path(exists=True), help="Path to GFF3 file for genomic mapping (if GenBank not provided)")
-@click.option("-o", "--outdir", default="results", show_default=True, help="Output directory for domain annotations")
-@click.option("-prefix", "--prefix", default="domains", show_default=True, help="Output filename prefix")
+@click.option("-o", "--output", default="results/domains", show_default=True, help="Output path prefix for domain annotations (without extension)")
 def process_cmd(
     interpro_tsv: str,
     entry_list: Optional[str],
     genbank: Optional[str],
     gff: Optional[str],
-    outdir: str,
-    prefix: str
+    output: str
 ):
     """Process InterProScan results and generate genomic domain mapping files."""
-    out_path = Path(outdir)
-    out_path.mkdir(parents=True, exist_ok=True)
+    # Strip common extension if provided
+    if output.endswith((".tsv", ".bed", ".gff3", ".gff")):
+        output = str(Path(output).with_suffix(""))
+
+    out_prefix = Path(output)
+    if out_prefix.parent:
+        out_prefix.parent.mkdir(parents=True, exist_ok=True)
 
     # 1. Handle InterPro Entry List
     if entry_list and Path(entry_list).exists():
         entry_file = Path(entry_list)
     else:
-        entry_file = out_path / "interpro_entry_list.txt"
+        entry_dir = out_prefix.parent if str(out_prefix.parent) else Path(".")
+        entry_file = entry_dir / "interpro_entry_list.txt"
         if not entry_file.exists():
             click.echo("[*] Downloading EBI InterPro entry list...")
             fetch_interpro_entry_list(entry_file)
@@ -102,16 +106,16 @@ def process_cmd(
     click.echo(f"[+] Resolved {len(resolved)} non-redundant domain annotations across proteins.")
 
     # 5. Export Writers
-    tsv_out = out_path / f"{prefix}.tsv"
+    tsv_out = Path(f"{output}.tsv")
     write_tsv(resolved, tsv_out)
     click.echo(f"[+] Saved TSV domain annotations: {tsv_out}")
 
     if genes:
-        bed_out = out_path / f"{prefix}.bed"
+        bed_out = Path(f"{output}.bed")
         write_bed(resolved, bed_out)
         click.echo(f"[+] Saved BED domain annotations: {bed_out}")
 
-        gff_out = out_path / f"{prefix}.gff3"
+        gff_out = Path(f"{output}.gff3")
         write_gff3(resolved, gff_out)
         click.echo(f"[+] Saved GFF3 domain annotations: {gff_out}")
 

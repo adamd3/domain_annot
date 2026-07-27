@@ -73,8 +73,7 @@ pip install -e .
    domain-annot process \
      -i interpro_results.tsv \
      -g data/NC_010397.1.gbk \
-     -o results/ \
-     --prefix my_genome_domains
+     -o results/my_genome_domains
    ```
 
 ---
@@ -96,8 +95,7 @@ If you already have your own protein FASTA file (`my_proteins.fasta`) and genomi
    domain-annot process \
      -i interpro_results.tsv \
      --gff my_genome.gff3 \
-     -o results/ \
-     --prefix my_genome_domains
+     -o results/my_genome_domains
    ```
 
 ---
