@@ -108,10 +108,12 @@ def process_cmd(
     else:
         tree_file = entry_dir / "ParentChildTreeFile.txt"
         if not tree_file.exists():
-            # Check data/ directory as fallback
             data_tree = Path("data/ParentChildTreeFile.txt")
             if data_tree.exists():
                 tree_file = data_tree
+            else:
+                click.echo("[*] Downloading EBI InterPro parent-child tree...")
+                fetch_interpro_parent_child_tree(tree_file)
 
     if tree_file.exists():
         parent_map = parse_parent_child_tree(tree_file)
