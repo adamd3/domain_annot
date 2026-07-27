@@ -17,9 +17,9 @@
 
 `domain_annot` filters and resolves raw InterProScan predictions into non-redundant genomic domain annotations using a 5-step pipeline:
 
-1. **Grouping & Outermost Boundary Aggregation**: Raw hits for each protein are grouped by InterPro accession (`interpro_acc`). Outermost start/stop coordinates are computed and the best (lowest) E-value score is retained.
+1. **Grouping & Outermost Boundary Aggregation**: Raw hits for each protein are grouped by InterPro accession (`interpro_acc`). For each unique accession, outermost start/stop coordinates are computed and its best (lowest) E-value score among its member hits is recorded. No accessions are eliminated in this step.
 2. **Full-Length Parent Filtering**: Overly broad structural entries spanning almost the full length of a protein (`width > 150 aa`) are filtered out when more specific internal domain hits exist.
-3. **Specificity Upgrades**: Nested hits are evaluated against official EBI InterPro entry priorities (`Family`=3 > `Domain`=2 > `Homologous_superfamily`=1). Enclosing candidate boundaries upgrade their identity when higher-specificity child entries are present.
+3. **Specificity Upgrades**: Nested hits are evaluated against official EBI InterPro entry priorities (`Family`=3 > `Domain`=2 > `Homologous_superfamily`=1). Enclosing candidate boundaries upgrade their identity when higher-specificity child entries are present (with E-value used as a secondary tie-breaker).
 4. **50% Overlap Reduction**: Domain candidates are processed in order of length. Any candidate overlapping an already-accepted domain segment by **>50% of its own length** is filtered as redundant.
 5. **Genomic Coordinate Mapping**: Amino acid positions ($1 \dots N$) are mapped to 1-based genomic nucleotide coordinates based on gene strand and boundaries (handling both $+$ and $-$ strands).
 
